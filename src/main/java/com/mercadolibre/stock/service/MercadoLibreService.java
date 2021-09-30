@@ -1,7 +1,7 @@
 package com.mercadolibre.stock.service;
 
-import com.mercadolibre.stock.model.dto.ml.ItemDTO;
+import com.mercadolibre.stock.model.dto.ml.ItemMLDTO;
 
 public interface MercadoLibreService {
-    ItemDTO getItemById(String itemId);
+    ItemMLDTO getItemById(String itemId);
 }

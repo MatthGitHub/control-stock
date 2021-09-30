@@ -2,7 +2,7 @@ package com.mercadolibre.stock.model.dto.ml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ItemDTO {
+public class ItemMLDTO {
     private String id;
     @JsonProperty("shipping")
     private ShippingDTO shippingDTO;

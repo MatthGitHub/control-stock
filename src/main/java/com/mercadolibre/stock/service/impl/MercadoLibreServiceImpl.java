@@ -1,6 +1,6 @@
 package com.mercadolibre.stock.service.impl;
 
-import com.mercadolibre.stock.model.dto.ml.ItemDTO;
+import com.mercadolibre.stock.model.dto.ml.ItemMLDTO;
 import com.mercadolibre.stock.service.MercadoLibreService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,11 +17,11 @@ public class MercadoLibreServiceImpl implements MercadoLibreService {
     private RestTemplate restTemplate;
 
     @Override
-    public ItemDTO getItemById(String itemId) {
+    public ItemMLDTO getItemById(String itemId) {
         UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl(ENDPOINT_ITEMS)
                 .pathSegment("{itemId}")
                 .buildAndExpand(itemId);
 
-        return restTemplate.getForObject(uriComponents.toUriString(), ItemDTO.class);
+        return restTemplate.getForObject(uriComponents.toUriString(), ItemMLDTO.class);
     }
 }

@@ -4,7 +4,6 @@ import com.mercadolibre.stock.model.dto.validators.ValidDeposit;
 import com.mercadolibre.stock.model.dto.validators.ValidQuantity;
 import com.mercadolibre.stock.utils.PatternUtils;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
 public class StockDTO {
@@ -14,6 +13,14 @@ public class StockDTO {
     private int quantity;
     @Pattern(regexp = PatternUtils.LOCATION_PATTERN, message = "{api.error.internal.format}")
     private String location;
+
+    public StockDTO(){}
+
+    public StockDTO(String location, String deposit, int quantity){
+        this.location = location;
+        this.deposit = deposit;
+        this.quantity = quantity;
+    }
 
     public String getDeposit() {
         return deposit;

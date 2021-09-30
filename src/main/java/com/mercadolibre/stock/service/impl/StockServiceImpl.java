@@ -1,8 +1,11 @@
 package com.mercadolibre.stock.service.impl;
 
 import com.mercadolibre.stock.exception.CustomException;
+import com.mercadolibre.stock.model.dto.ItemDTO;
+import com.mercadolibre.stock.model.dto.ItemWrapperDTO;
+import com.mercadolibre.stock.model.dto.PaginationWrapperDTO;
 import com.mercadolibre.stock.model.dto.StockDTO;
-import com.mercadolibre.stock.model.dto.ml.ItemDTO;
+import com.mercadolibre.stock.model.dto.ml.ItemMLDTO;
 import com.mercadolibre.stock.model.entity.Deposit;
 import com.mercadolibre.stock.model.entity.Location;
 import com.mercadolibre.stock.model.entity.Stock;
@@ -12,14 +15,19 @@ import com.mercadolibre.stock.service.LocationService;
 import com.mercadolibre.stock.service.MercadoLibreService;
 import com.mercadolibre.stock.service.StockService;
 import com.mercadolibre.stock.utils.Constants;
+import com.mercadolibre.stock.utils.DTOCreatorHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 
 @Service("stockService")
 public class StockServiceImpl implements StockService {
@@ -41,11 +49,11 @@ public class StockServiceImpl implements StockService {
     @Transactional
     @Override
     public StockDTO add(String itemId, StockDTO stockDTO) {
-        ItemDTO itemDTO = mercadoLibreService.getItemById(itemId);
-        if(Objects.isNull(itemDTO)
-                || Objects.isNull(itemDTO.getShippingDTO())
-                || !itemDTO.getShippingDTO().getLogisticType().equals(Constants.LOGICTIC_FULFILLMENT))
-            throw new CustomException(messageSource.getMessage("api.error.internal.data.deposit", new Object[]{itemDTO.getId()}, Locale.ENGLISH));
+        ItemMLDTO itemMLDTO = mercadoLibreService.getItemById(itemId);
+        if(Objects.isNull(itemMLDTO)
+                || Objects.isNull(itemMLDTO.getShippingDTO())
+                || !itemMLDTO.getShippingDTO().getLogisticType().equals(Constants.LOGICTIC_FULFILLMENT))
+            throw new CustomException(messageSource.getMessage("api.error.internal.data.deposit", new Object[]{itemMLDTO.getId()}, Locale.ENGLISH));
 
         if(stockRepository.countByLocationCode(stockDTO.getLocation()) >= LOCATION_ITEMS_DIFF_MAX)
             throw new CustomException(messageSource.getMessage("api.error.location.items.diff.limit", new Object[]{stockDTO.getLocation()}, Locale.ENGLISH));
@@ -62,7 +70,54 @@ public class StockServiceImpl implements StockService {
         stock.addQuantity(stockDTO.getQuantity());
         save(stock);
 
-        return stockDTO;
+        return DTOCreatorHelper.createStockDTOfromEntity(stock);
+    }
+
+    @Override
+    public StockDTO consume(String itemId, StockDTO stockDTO) {
+        Stock stock = stockRepository.findByItemIdAndLocationCodeAndLocationDepositCode(
+                itemId, stockDTO.getLocation(), stockDTO.getDeposit()
+        ).orElseThrow(() -> new CustomException(messageSource.getMessage("api.error.internal.data.not-found", new Object[]{itemId}, Locale.ENGLISH), HttpStatus.NOT_FOUND.value()));
+
+        if(stockDTO.getQuantity() > stock.getQuantity())
+            throw new CustomException(messageSource.getMessage("api.error.location.items.insufficient", null, Locale.ENGLISH));
+
+        stock.consumeQuantity(stockDTO.getQuantity());
+        save(stock);
+
+        return DTOCreatorHelper.createStockDTOfromEntity(stock);
+    }
+
+    @Override
+    public ItemWrapperDTO getByLocationDeposit(String locationCode, String depositCode) {
+        Set<ItemDTO> itemDTOSet = new HashSet<>();
+
+        int totalItems = 0;
+        Set<Stock> stockSet = stockRepository.findByLocationCodeAndLocationDepositCode(locationCode, depositCode);
+        if(!stockSet.isEmpty()) {
+            stockSet.forEach(stock -> itemDTOSet.add(DTOCreatorHelper.createItemDTOfromEntity(stock)));
+            totalItems = stockSet.stream().mapToInt(Stock::getQuantity).sum();
+        }
+
+        return new ItemWrapperDTO(locationCode, depositCode, totalItems, itemDTOSet);
+    }
+
+    @Override
+    public PaginationWrapperDTO search(String deposit, String itemId, int page, int size) {
+        PaginationWrapperDTO paginationWrapperDTO = new PaginationWrapperDTO();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "quantity"));
+        Page<ItemDTO> itemDTOPage = stockRepository.findByFilters(
+                deposit, itemId,pageable
+        );
+
+        List<ItemDTO> itemDTOList = itemDTOPage.getContent();
+        if(!itemDTOList.isEmpty()) {
+            paginationWrapperDTO.setCurrentPage(itemDTOPage.getNumber());
+            paginationWrapperDTO.setTotalItems(itemDTOPage.getTotalElements());
+            paginationWrapperDTO.setTotalPages(itemDTOPage.getTotalPages());
+            paginationWrapperDTO.setItems(itemDTOList);
+        }
+        return paginationWrapperDTO;
     }
 
     private Stock buildNewStock(String itemId, StockDTO stockDTO, Location location){
