@@ -120,6 +120,20 @@ public class StockServiceImpl implements StockService {
         return paginationWrapperDTO;
     }
 
+    @Override
+    public Stock save(Stock stock){
+        try {
+            return stockRepository.saveAndFlush(stock);
+        } catch (Exception e) {
+            throw new CustomException(messageSource.getMessage("api.error.internal.data.persistence", null, Locale.ENGLISH), e);
+        }
+    }
+
+    @Override
+    public void removeForTestOnly(UUID uuid) {
+        stockRepository.deleteById(uuid);
+    }
+
     private Stock buildNewStock(String itemId, StockDTO stockDTO, Location location){
         Stock stock = new Stock(itemId);
         if(Objects.nonNull(location)) {
@@ -131,13 +145,5 @@ public class StockServiceImpl implements StockService {
             stock.setLocation(new Location(stockDTO.getLocation(), deposit));
         }
         return stock;
-    }
-
-    private Stock save(Stock stock){
-        try {
-            return stockRepository.saveAndFlush(stock);
-        } catch (Exception e) {
-            throw new CustomException(messageSource.getMessage("api.error.internal.data.persistence", null, Locale.ENGLISH), e);
-        }
     }
 }
