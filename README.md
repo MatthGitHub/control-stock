@@ -29,7 +29,7 @@
 }
 ```
 ---
-#### `Retirar productos de stock`
+#### `Retirar productos de stock     `
 ##### @PUT -> /items/{itemId}/consume
 | url parameter | type | required | 
 | :---: | :---: | :---: |
