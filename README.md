@@ -44,7 +44,7 @@
 	"location": "AA-00-10-DE"
 }
 ```
-##### Response -> [StockDTO](#response-stockdto)
+##### Response -> [StockDTO](#stockdto)
 
 ---
 
@@ -98,7 +98,7 @@
 | totalItems       |   long |
 | totalPages       | long |
 | currentPage     | long | 
-| items     | [ItemDTO[]](#response-itemdto) |
+| items     | [ItemDTO[]](#itemdto) |
 
 ```json
 {
