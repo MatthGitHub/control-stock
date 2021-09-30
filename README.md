@@ -44,7 +44,7 @@
 	"location": "AA-00-10-DE"
 }
 ```
-##### Response -> [StockDTO](#stockdto)
+##### Response -> [StockDTO](#response---stockdto)
 
 ---
 
